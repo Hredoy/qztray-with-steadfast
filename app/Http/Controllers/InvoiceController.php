@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessSetting;
 use App\Models\Invoice;
 use App\Services\IdGenerateService;
+use App\Services\WhatsAppFreeService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -22,22 +24,29 @@ class InvoiceController extends Controller
     {
         $q = $request->string('q')->toString();
 
-        $invoices = Invoice::query()
+        $query = Invoice::query()
             ->when($q, function ($query) use ($q) {
-                $query->where('invoice', 'like', "%{$q}%")
-                    ->orWhere('stead_fast_id', 'like', "%{$q}%")
-                    ->orWhere('name', 'like', "%{$q}%")
-                    ->orWhere('phone', 'like', "%{$q}%");
-            })
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('invoice_id', 'like', "%{$q}%")
+                        ->orWhere('stead_fast_id', 'like', "%{$q}%")
+                        ->orWhere('name', 'like', "%{$q}%")
+                        ->orWhere('phone', 'like', "%{$q}%");
+                });
+            });
+
+        $invoices = (clone $query)
             ->latest('id')
             ->paginate(15)
             ->withQueryString();
+
+        $totalInvoiceSum = Invoice::sum('total');
 
         return Inertia::render('invoices/Index', [
             'invoices' => $invoices,
             'filters' => [
                 'q' => $q,
             ],
+            'totalInvoiceSum' => $totalInvoiceSum,
         ]);
     }
 
@@ -49,32 +58,49 @@ class InvoiceController extends Controller
     public function store(Request $request, IdGenerateService $idGenerateService, SteadFast $steadfast)
     {
         $data = $this->validated($request);
-        $data['invoice'] = $idGenerateService->generateNextSaleInvoiceNo();
+        $data['invoice_id'] = $idGenerateService->generateNextSaleInvoiceNo();
 
+        if ((int) $request->delivery_type === 1) {
+            $request->merge(['cod' => 0]);
+        }
         $invoice = Invoice::create($data);
 
-        $order = new OrderRequest(
-            invoice: $invoice['invoice'],
-            recipient_name: $invoice['name'],
-            recipient_phone: $invoice['phone'],
-            recipient_address: $invoice['address'],
-            cod_amount: $invoice['cod'],
-            note: 'Handle with care'
-        );
 
-        $response = $steadfast->createOrder($order);
-        $invoice->stead_fast_id = $response['consignment_id'];
-        $invoice->save();
+        if ($invoice['delivery_type'] === 2) {
+            $order = new OrderRequest(
+                invoice: $invoice['invoice_id'],
+                recipient_name: $invoice['name'],
+                recipient_phone: $invoice['phone'],
+                recipient_address: $invoice['address'],
+                cod_amount: $invoice['cod'],
+                note: $invoice['notes'] ?? 'Handle with care'
+            );
+
+            $response = $steadfast->createOrder($order);
+            if ($response->status) {
+                $invoice->stead_fast_id = $response->consignment['consignment_id'];
+                $invoice->save();
+            }
+        }
+
 
         return redirect()
             ->route('invoices.show', $invoice->id)
             ->with('success', 'Invoice created successfully.');
     }
 
-    public function show(Invoice $invoice)
+    public function show(Invoice $invoice, WhatsAppFreeService $whatsAppFreeService)
     {
+        $whatsappSettings = BusinessSetting::where('key', 'whatsapp')->first();
+
+        if ($whatsappSettings && $whatsappSettings->value) {
+            $waData = $whatsappSettings->value;
+            $waLink = $whatsAppFreeService->deliveryLink(deliveryPhone: $waData['delivery_man_phone'], message: $waData['delivery_man_message']);
+        }
+
         return Inertia::render('invoices/Show', [
             'invoice' => $invoice,
+            'walink' => $waLink ?? null,
         ]);
     }
 
@@ -88,6 +114,10 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         $data = $this->validated($request);
+
+        if ((int) $request->delivery_type === 1) {
+            $request->merge(['cod' => 0]);
+        }
 
         $invoice->update($data);
 
@@ -133,7 +163,7 @@ class InvoiceController extends Controller
     public function packagingSlipPdf(Invoice $invoice)
     {
         // QR
-        $qrText = $invoice->stead_fast_id ?: $invoice->invoice;
+        $qrText = $invoice->stead_fast_id ?: $invoice->invoice_id;
 
         $qrResult = (new Builder(
             writer: new PngWriter,
@@ -150,7 +180,7 @@ class InvoiceController extends Controller
         $qrBase64 = 'data:image/png;base64,'.base64_encode($qrResult->getString());
 
         // Barcode
-        $barcodeText = $invoice->stead_fast_id ?: $invoice->invoice;
+        $barcodeText = $invoice->stead_fast_id ?: $invoice->invoice_id;
         $generator = new BarcodeGeneratorPNG;
 
         $barcodeBase64 = 'data:image/png;base64,'.base64_encode(
@@ -216,14 +246,26 @@ class InvoiceController extends Controller
     private function validated(Request $request): array
     {
         return $request->validate([
-            'invoice' => ['nullable', 'string', 'max:255'],
-            'stead_fast_id' => ['nullable', 'string', 'max:255'],
             'wgt' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
-            'cod' => ['required', 'string', 'max:255'],
+            'delivery_type' => ['required', 'in:1,2'],
+            'cod' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                // required only if delivery_type == 2
+                function ($attr, $value, $fail) use ($request) {
+                    if ((int) $request->delivery_type === 2 && ($value === null || $value === '')) {
+                        $fail('COD is required for Delivery.');
+                    }
+                },
+            ],
+            'total' => ['required', 'string', 'max:255'],
             'instruction' => ['nullable', 'string', 'max:5000'],
+            'notes' => ['nullable', 'string', 'max:5000'],
+
         ]);
     }
 }

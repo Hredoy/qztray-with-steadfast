@@ -3,10 +3,15 @@
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\TwoFactorAuthenticationController;
+use App\Http\Controllers\Settings\WhatsappSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', '/settings/profile');
+
+    Route::get('business-settings/whatsapp', [WhatsappSettingsController::class, 'index'])->name('business-settings.whatsapp');
+    Route::put('/business-settings/whatsapp', [WhatsappSettingsController::class, 'update'])
+        ->name('business-settings.whatsapp.update');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');

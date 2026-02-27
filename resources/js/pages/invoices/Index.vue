@@ -2,7 +2,7 @@
 import { Head, Link, router } from "@inertiajs/vue3";
 import AppLayout from "@/layouts/AppLayout.vue";
 import type { BreadcrumbItem } from "@/types";
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { dashboard } from '@/routes';
 
 const props = defineProps<{
@@ -14,6 +14,7 @@ const props = defineProps<{
     filters: {
         q: string;
     };
+    totalInvoiceSum: number;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -27,6 +28,14 @@ watch(q, (val) => {
     router.get(route("invoices.index"), { q: val }, { preserveState: true, replace: true });
 });
 
+const from = computed(() => {
+    if (!props.invoices.data.length) return 0;
+    return (props.invoices.current_page - 1) * props.invoices.per_page + 1;
+});
+
+const to = computed(() => {
+    return (props.invoices.current_page - 1) * props.invoices.per_page + props.invoices.data.length;
+});
 function destroyInvoice(id: number) {
     if (!confirm("Delete this invoice?")) return;
     router.delete(route("invoices.destroy", id));
@@ -63,6 +72,7 @@ function destroyInvoice(id: number) {
                         <th class="p-3 text-left">Name</th>
                         <th class="p-3 text-left">Phone</th>
                         <th class="p-3 text-left">COD</th>
+                        <th class="p-3 text-left">Invoice Total</th>
                         <th class="p-3 text-left">Actions</th>
                     </tr>
                     </thead>
@@ -70,11 +80,12 @@ function destroyInvoice(id: number) {
                     <tbody>
                     <tr v-for="row in invoices.data" :key="row.id" class="border-b">
                         <td class="p-3">{{ row.id }}</td>
-                        <td class="p-3">{{ row.invoice }}</td>
+                        <td class="p-3">{{ row.invoice_id }}</td>
                         <td class="p-3">{{ row.stead_fast_id }}</td>
                         <td class="p-3">{{ row.name }}</td>
                         <td class="p-3">{{ row.phone }}</td>
-                        <td class="p-3">{{ row.cod }}</td>
+                        <td class="p-3">{{ Number(row.cod).toFixed(2) }}</td>
+                        <td class="p-3">{{ Number(row.total).toFixed(2) }}</td>
                         <td class="p-3 flex gap-2">
                             <Link :href="route('invoices.show', row.id)" class="underline">View</Link>
                             <Link :href="route('invoices.edit', row.id)" class="underline">Edit</Link>
@@ -102,6 +113,16 @@ function destroyInvoice(id: number) {
           }"
                     v-html="l.label"
                 />
+            </div>
+
+            <div class="flex justify-between mb-3">
+                <div class="text-lg font-semibold">
+                    Total Invoice Sum: {{ Number(totalInvoiceSum).toFixed(2) }}
+                </div>
+
+                <div class="text-sm text-gray-500">
+                    Showing {{ from }} - {{ to }} of {{ invoices.total }}
+                </div>
             </div>
         </div>
     </AppLayout>

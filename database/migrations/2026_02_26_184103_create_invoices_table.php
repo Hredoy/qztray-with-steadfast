@@ -19,7 +19,9 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
+            $table->tinyInteger('delivery_type')->default(1)->comment('1 = Pickup, 2 = Delivery');
             $table->string('cod')->nullable()->default(0);
+            $table->string('total')->nullable()->default(0);
             $table->text('instruction')->nullable();
             $table->text('notes')->nullable();
             $table->tinyInteger('status')->nullable();

@@ -4,7 +4,7 @@ import AppLayout from "@/layouts/AppLayout.vue";
 import type { BreadcrumbItem } from "@/types";
 import { ref } from "vue";
 
-const props = defineProps<{ invoice: any }>();
+const props = defineProps<{ invoice: any, walink: string }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: "Dashboard", href: "/dashboard" },
@@ -68,6 +68,14 @@ function doPrint() {
                     <button class="rounded-lg border px-3 py-2" @click="openPrint('packaging-slip')">
                         Print Packaging Slip
                     </button>
+                    <a
+                        v-if="walink"
+                        :href="walink"
+                        target="_blank"
+                        class="rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 transition"
+                    >
+                        Notify Delivery Man
+                    </a>
 
                     <Link :href="`/invoices/${props.invoice.id}/edit`" class="underline">Edit</Link>
                     <button class="text-red-600 underline" @click="destroyInvoice">Delete</button>
@@ -78,7 +86,7 @@ function doPrint() {
             <!-- Your existing details card -->
             <div class="rounded-xl border  p-4 text-sm">
                 <div class="grid gap-3 md:grid-cols-2">
-                    <div><span class="font-medium">Invoice:</span> {{ invoice.invoice }}</div>
+                    <div><span class="font-medium">Invoice:</span> {{ invoice.invoice_id }}</div>
                     <div><span class="font-medium">SteadFast ID:</span> {{ invoice.stead_fast_id }}</div>
                     <div><span class="font-medium">Weight:</span> {{ invoice.wgt }}</div>
                     <div><span class="font-medium">COD:</span> {{ invoice.cod }}</div>

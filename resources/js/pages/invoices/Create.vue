@@ -11,13 +11,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const form = useForm({
-    invoice: "",
-    stead_fast_id: "",
-    wgt: "",
+    wgt: "0.5",
     name: "",
     phone: "",
     address: "",
     cod: "",
+    delivery_type: "",
+    total: "",
+    notes: "",
     instruction: "",
 });
 
