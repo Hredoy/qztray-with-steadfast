@@ -239,7 +239,7 @@
         <div class="left">
             <div class="row">
                 <span class="label">Invoice:</span>
-                <span class="value">{{ $invoice->invoice }}</span>
+                <span class="value">{{ $invoice->invoice_id }}</span>
             </div>
             <div class="row">
                 <span class="label">D. Type :</span>
@@ -285,7 +285,7 @@
         </div>
 
         <div class="footer-mid">
-            P: {{ now()->format('d/m/y h:ia') }}
+           thanks for purchase
         </div>
 
         <div class="courier">

@@ -121,7 +121,7 @@
         <table width="100%" cellspacing="0" cellpadding="0">
             <tr>
                 <td>
-                    Invoice: <span class="bold">{{ $invoice->invoice }}</span><br>
+                    Invoice: <span class="bold">{{ $invoice->invoice_id }}</span><br>
                     D.Type: <span class="bold">Home</span>
                 </td>
                 <td class="right">
@@ -161,7 +161,7 @@
                 </td>
 
                 <td class="center small" style="vertical-align:bottom;">
-                    P: {{ now()->format('d/m/y h:ia') }}
+                    thanks for purchase
                 </td>
 
                 <td width="80pt" class="right" style="vertical-align:bottom;">

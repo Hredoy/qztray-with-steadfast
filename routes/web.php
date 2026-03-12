@@ -4,7 +4,6 @@ use App\Http\Controllers\InvoiceController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-
 Route::inertia('/', 'Welcome', [
     'canRegister' => Features::enabled(Features::registration()),
 ])->name('home');
@@ -25,5 +24,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/invoices/{invoice}/print/packaging-slip', [InvoiceController::class, 'packagingSlipPdf'])
         ->name('invoices.print.packagingSlip');
 });
+
+Route::get('/packaging-slips', function () {
+    $ids = request('ids', []);
+
+    return app(InvoiceController::class)->packagingSlipPdfBulk($ids);
+})->name('invoices.packaging-slips.bulk');
 
 require __DIR__.'/settings.php';

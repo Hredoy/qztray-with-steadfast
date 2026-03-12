@@ -65,7 +65,6 @@ class InvoiceController extends Controller
         }
         $invoice = Invoice::create($data);
 
-
         if ($invoice['delivery_type'] === 2) {
             $order = new OrderRequest(
                 invoice: $invoice['invoice_id'],
@@ -82,7 +81,6 @@ class InvoiceController extends Controller
                 $invoice->save();
             }
         }
-
 
         return redirect()
             ->route('invoices.show', $invoice->id)
@@ -212,6 +210,66 @@ class InvoiceController extends Controller
         ]);
 
         return $pdf->stream("packaging-slip-{$invoice->id}.pdf");
+    }
+
+    public function packagingSlipPdfBulk(array $invoiceIds)
+    {
+        $invoices = Invoice::whereIn('id', $invoiceIds)->get();
+
+        $slips = $invoices->map(function (Invoice $invoice) {
+            // QR
+            $qrText = $invoice->stead_fast_id ?: $invoice->invoice_id;
+
+            $qrResult = (new Builder(
+                writer: new PngWriter,
+                writerOptions: [],
+                validateResult: false,
+                data: $qrText,
+                encoding: new Encoding('UTF-8'),
+                errorCorrectionLevel: ErrorCorrectionLevel::High,
+                size: 220,
+                margin: 0,
+                roundBlockSizeMode: RoundBlockSizeMode::Margin,
+            ))->build();
+
+            $qrBase64 = 'data:image/png;base64,'.base64_encode($qrResult->getString());
+
+            // Barcode
+            $barcodeText = $qrText;
+            $generator = new BarcodeGeneratorPNG;
+
+            $barcodeBase64 = 'data:image/png;base64,'.base64_encode(
+                $generator->getBarcode($barcodeText, $generator::TYPE_CODE_39, 2, 80)
+            );
+
+            return [
+                'invoice' => $invoice,
+                'qrBase64' => $qrBase64,
+                'barcodeBase64' => $barcodeBase64,
+                'barcodeText' => $barcodeText,
+            ];
+        })->values();
+
+        // Logos (only once)
+        $logos = [
+            'brandLogo' => $this->imgToDataUri(public_path('logo/SVG/Asset 5.svg')),
+            'miniLogo' => $this->imgToDataUri(public_path('logo/SVG/Asset 2.svg')),
+            'packLogo' => $this->imgToDataUri(public_path('logo/SVG/Asset 3.svg')),
+            'courierLogo' => $this->imgToDataUri(public_path('logo/SVG/Asset 4.svg')),
+        ];
+
+        // 3x4 inch paper (216x288 pt)
+        $paper = [0, 0, 216, 288];
+
+        $pdf = Pdf::loadView('prints.invoices.packaging-slip-pdf-bulk', [
+            'slips' => $slips,
+            ...$logos,
+        ])->setPaper($paper)->setOptions([
+            'dpi' => 203,
+            'defaultFont' => 'DejaVu Sans',
+        ]);
+
+        return $pdf->stream('packaging-slips.pdf');
     }
 
     private function imgToDataUri(string $path): string
