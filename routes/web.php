@@ -30,5 +30,10 @@ Route::get('/packaging-slips', function () {
 
     return app(InvoiceController::class)->packagingSlipPdfBulk($ids);
 })->name('invoices.packaging-slips.bulk');
+Route::get('/logo-labels', function () {
+    $ids = request('ids', []);
+
+    return app(InvoiceController::class)->logoPdfBulkByInvoiceIds($ids);
+})->name('invoices.logo-labels.bulk');
 
 require __DIR__.'/settings.php';

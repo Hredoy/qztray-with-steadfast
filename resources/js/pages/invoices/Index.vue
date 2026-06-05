@@ -84,6 +84,15 @@ function destroyInvoice(id: number) {
 }
 
 // ✅ Generate PDF for selected invoices
+function generateLogos() {
+    if (!selected.value.length) {
+        alert("Please select at least one invoice.");
+        return;
+    }
+
+    const url = route("invoices.logo-labels.bulk", { ids: selected.value });
+    window.open(url, "_blank");
+}
 function generateSlips() {
     if (!selected.value.length) {
         alert("Please select at least one invoice.");
@@ -119,6 +128,15 @@ function generateSlips() {
                         type="button"
                     >
                         Generate Slip ({{ selected.length }})
+                    </button>
+
+                    <button
+                        class="rounded-lg border px-4 py-2"
+                        :class="{ 'opacity-50 pointer-events-none': selected.length === 0 }"
+                        @click="generateLogos"
+                        type="button"
+                    >
+                        Generate Logo ({{ selected.length }})
                     </button>
 
                     <Link

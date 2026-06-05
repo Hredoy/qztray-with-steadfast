@@ -212,6 +212,24 @@ class InvoiceController extends Controller
         return $pdf->stream("packaging-slip-{$invoice->id}.pdf");
     }
 
+    public function logoPdfBulkByInvoiceIds(array $invoiceIds)
+    {
+        $invoices = Invoice::whereIn('id', $invoiceIds)->get();
+
+        $pdf = Pdf::loadView('prints.pdf.logo-labels-bulk', [
+            'invoices' => $invoices,
+            'img1' => $this->imgToDataUri(public_path('logo/thankyou.svg')),
+            'img2' => $this->imgToDataUri(public_path('logo/combine-logo.svg')),
+        ])
+            ->setPaper([0, 0, 144, 215.28])
+            ->setOptions([
+                'dpi' => 203,
+                'defaultFont' => 'DejaVu Sans',
+            ]);
+
+        return $pdf->stream('logos-bulk.pdf');
+    }
+
     public function packagingSlipPdfBulk(array $invoiceIds)
     {
         $invoices = Invoice::whereIn('id', $invoiceIds)->get();
