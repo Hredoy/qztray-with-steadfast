@@ -12,7 +12,7 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-    Route::resource('customers', CustomerController::class)->only(['store']);
+    Route::resource('customers', CustomerController::class);
     Route::resource('order-notes', OrderNoteController::class)->only(['store']);
     Route::post('/order-notes/{orderNote}/convert', [OrderNoteController::class, 'convert'])
         ->name('order-notes.convert');
