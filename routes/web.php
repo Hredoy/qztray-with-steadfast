@@ -3,6 +3,8 @@
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\OrderNoteController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseImportController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -17,6 +19,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/order-notes/{orderNote}/convert', [OrderNoteController::class, 'convert'])
         ->name('order-notes.convert');
     Route::resource('invoices', InvoiceController::class);
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
+    Route::get('purchase-imports', [PurchaseImportController::class, 'index'])->name('purchase-imports.index');
+    Route::get('purchase-imports/create', [PurchaseImportController::class, 'create'])->name('purchase-imports.create');
+    Route::post('purchase-imports/extract', [PurchaseImportController::class, 'extract'])->name('purchase-imports.extract');
+    Route::get('purchase-imports/{purchaseImport}', [PurchaseImportController::class, 'show'])->name('purchase-imports.show');
+    Route::post('purchase-imports/{purchaseImport}/confirm', [PurchaseImportController::class, 'confirm'])->name('purchase-imports.confirm');
 
     Route::get('/invoices/{invoice}/print/instruction', [InvoiceController::class, 'printInstruction'])
         ->name('invoices.print.instruction');

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
+import ProductPicker from "@/components/ProductPicker.vue";
 
 const props = defineProps<{
     form: any;
@@ -58,7 +59,7 @@ watch(
 
         <div class="md:col-span-2">
             <label class="mb-1 block text-sm font-medium">Product List</label>
-            <textarea v-model="form.product_list" rows="5" class="w-full rounded-lg border p-2"></textarea>
+            <ProductPicker v-model="form.product_list" />
             <div v-if="form.errors.product_list" class="mt-1 text-sm text-red-600">{{ form.errors.product_list }}</div>
         </div>
 

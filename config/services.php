@@ -34,6 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
     'steadfast' => [
         'base_url' => env('STEADFAST_BASE_URL', 'https://portal.steadfast.com.bd/api/v1'),
         'api_key' => env('STEADFAST_API_KEY'),
