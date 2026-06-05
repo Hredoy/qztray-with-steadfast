@@ -22,8 +22,4 @@ class Customer extends Model
         return $this->hasMany(Invoice::class);
     }
 
-    public function orderNotes(): HasMany
-    {
-        return $this->hasMany(OrderNote::class);
-    }
 }

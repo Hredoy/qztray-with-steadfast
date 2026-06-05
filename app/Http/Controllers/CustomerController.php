@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -16,15 +17,17 @@ class CustomerController extends Controller
             'addresses.*.address' => ['required', 'string', 'max:255'],
         ]);
 
-        $customer = Customer::create([
-            'name' => $data['name'],
-            'phone' => $data['phone'],
-        ]);
+        DB::transaction(function () use ($data) {
+            $customer = Customer::create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+            ]);
 
-        foreach ($data['addresses'] as $address) {
-            $customer->addresses()->create($address);
-        }
+            foreach ($data['addresses'] as $address) {
+                $customer->addresses()->create($address);
+            }
+        });
 
-        return redirect()->route('customers.show', $customer);
+        return redirect()->route('dashboard')->with('success', 'Customer created successfully.');
     }
 }

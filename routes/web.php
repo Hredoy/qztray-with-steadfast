@@ -11,7 +11,7 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
-    Route::resource('customers', CustomerController::class);
+    Route::resource('customers', CustomerController::class)->only(['store']);
     Route::resource('invoices', InvoiceController::class);
 
     Route::get('/invoices/{invoice}/print/instruction', [InvoiceController::class, 'printInstruction'])
