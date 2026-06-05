@@ -5,22 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Invoice extends Model
+class OrderNote extends Model
 {
     protected $fillable = [
         'customer_id',
-        'order_note_id',
         'invoice_id',
-        'stead_fast_id',
-        'wgt',
         'name',
         'phone',
         'address',
-        'cod',
-        'delivery_type',
+        'product_list',
+        'paid',
+        'due',
         'total',
-        'instruction',
-        'notes',
+    ];
+
+    protected $casts = [
+        'paid' => 'decimal:2',
+        'due' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     public function customer(): BelongsTo
@@ -28,8 +30,8 @@ class Invoice extends Model
         return $this->belongsTo(Customer::class);
     }
 
-    public function orderNote(): BelongsTo
+    public function invoice(): BelongsTo
     {
-        return $this->belongsTo(OrderNote::class);
+        return $this->belongsTo(Invoice::class);
     }
 }

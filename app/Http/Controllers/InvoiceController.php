@@ -89,6 +89,8 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice, WhatsAppFreeService $whatsAppFreeService)
     {
+        $invoice->load(['customer', 'orderNote']);
+
         $whatsappSettings = BusinessSetting::where('key', 'whatsapp')->first();
 
         if ($whatsappSettings && $whatsappSettings->value) {

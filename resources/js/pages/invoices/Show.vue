@@ -92,6 +92,18 @@ function doPrint() {
                     <div><span class="font-medium">COD:</span> {{ invoice.cod }}</div>
                     <div><span class="font-medium">Name:</span> {{ invoice.name }}</div>
                     <div><span class="font-medium">Phone:</span> {{ invoice.phone }}</div>
+                    <div v-if="invoice.customer">
+                        <span class="font-medium">Customer:</span>
+                        <Link :href="route('customers.show', invoice.customer.id)" class="underline">
+                            {{ invoice.customer.name }}
+                        </Link>
+                    </div>
+                    <div v-if="invoice.order_note">
+                        <span class="font-medium">Order Note:</span>
+                        <Link :href="route('order-notes.show', invoice.order_note.id)" class="underline">
+                            #{{ invoice.order_note.id }}
+                        </Link>
+                    </div>
                     <div class="md:col-span-2"><span class="font-medium">Address:</span> {{ invoice.address }}</div>
                     <div class="md:col-span-2">
                         <span class="font-medium">Instruction:</span>

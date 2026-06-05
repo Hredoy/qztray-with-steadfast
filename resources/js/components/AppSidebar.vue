@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid, ShoppingCart, Settings } from 'lucide-vue-next';
+import { LayoutGrid, NotebookPen, Settings, ShoppingCart, Users } from 'lucide-vue-next';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -27,6 +27,16 @@ const mainNavItems: NavItem[] = [
         title: 'Invoice',
         href: '/invoices',
         icon: ShoppingCart,
+    },
+    {
+        title: 'Customers',
+        href: '/customers',
+        icon: Users,
+    },
+    {
+        title: 'Order Notes',
+        href: '/order-notes',
+        icon: NotebookPen,
     },
 
     {
