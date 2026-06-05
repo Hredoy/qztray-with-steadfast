@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
@@ -10,6 +11,7 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+    Route::resource('customers', CustomerController::class);
     Route::resource('invoices', InvoiceController::class);
 
     Route::get('/invoices/{invoice}/print/instruction', [InvoiceController::class, 'printInstruction'])
