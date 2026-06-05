@@ -27,7 +27,9 @@ class OrderNoteTest extends TestCase
             'due' => 80,
         ]);
 
-        $response->assertRedirectToRoute('dashboard');
+        $note = \App\Models\OrderNote::where('phone', '01711111111')->firstOrFail();
+
+        $response->assertRedirectToRoute('order-notes.show', $note);
         $this->assertDatabaseHas('order_notes', [
             'customer_id' => $customer->id,
             'phone' => '01711111111',
@@ -87,5 +89,65 @@ class OrderNoteTest extends TestCase
         $this->actingAs($user)->post(route('order-notes.convert', $note->fresh()));
 
         $this->assertDatabaseCount('invoices', 1);
+    }
+
+    public function test_authenticated_user_can_visit_order_note_pages(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::create(['name' => 'Rahim Uddin', 'phone' => '01711111111']);
+        $note = $customer->orderNotes()->create([
+            'name' => 'Rahim Uddin',
+            'phone' => '01711111111',
+            'address' => 'House 10, Road 1, Dhaka',
+            'product_list' => 'Shirt x 2',
+            'paid' => 1200,
+            'due' => 80,
+            'total' => 1280,
+        ]);
+
+        $this->actingAs($user)->get(route('order-notes.index'))->assertOk();
+        $this->actingAs($user)->get(route('order-notes.create'))->assertOk();
+        $this->actingAs($user)->get(route('order-notes.show', $note))->assertOk();
+        $this->actingAs($user)->get(route('order-notes.edit', $note))->assertOk();
+    }
+
+    public function test_authenticated_user_can_update_order_note_and_recalculate_total(): void
+    {
+        $user = User::factory()->create();
+        $customer = Customer::create(['name' => 'Rahim Uddin', 'phone' => '01711111111']);
+        $note = $customer->orderNotes()->create([
+            'name' => 'Rahim Uddin',
+            'phone' => '01711111111',
+            'address' => 'House 10, Road 1, Dhaka',
+            'product_list' => 'Shirt x 2',
+            'paid' => 1200,
+            'due' => 80,
+            'total' => 1280,
+        ]);
+
+        $response = $this->actingAs($user)->put(route('order-notes.update', $note), [
+            'customer_id' => $customer->id,
+            'name' => 'Karim Uddin',
+            'phone' => '01822222222',
+            'address' => 'House 20, Road 2, Dhaka',
+            'product_list' => "Shoe x 1\nBag x 1",
+            'paid' => 2000,
+            'due' => 120,
+        ]);
+
+        $response->assertRedirectToRoute('order-notes.show', $note);
+        $this->assertDatabaseHas('order_notes', [
+            'id' => $note->id,
+            'name' => 'Karim Uddin',
+            'phone' => '01822222222',
+            'address' => 'House 20, Road 2, Dhaka',
+            'paid' => 2000,
+            'due' => 120,
+            'total' => 2120,
+        ]);
+        $this->assertDatabaseHas('customer_addresses', [
+            'customer_id' => $customer->id,
+            'address' => 'House 20, Road 2, Dhaka',
+        ]);
     }
 }

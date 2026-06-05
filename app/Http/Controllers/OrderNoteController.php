@@ -8,17 +8,93 @@ use App\Models\OrderNote;
 use App\Services\IdGenerateService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class OrderNoteController extends Controller
 {
+    public function index(Request $request)
+    {
+        $q = $request->string('q')->toString();
+
+        $orderNotes = OrderNote::query()
+            ->with(['customer', 'invoice'])
+            ->when($q, function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('name', 'like', "%{$q}%")
+                        ->orWhere('phone', 'like', "%{$q}%")
+                        ->orWhere('product_list', 'like', "%{$q}%");
+                });
+            })
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('order-notes/Index', [
+            'orderNotes' => $orderNotes,
+            'filters' => ['q' => $q],
+        ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('order-notes/Create', [
+            'customers' => $this->customerOptions(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $data = $this->validated($request);
 
-        DB::transaction(function () use ($data) {
+        $orderNote = DB::transaction(function () use ($data) {
             $customer = $this->resolveCustomer($data);
 
-            $customer->orderNotes()->create([
+            $orderNote = $customer->orderNotes()->create([
+                'name' => $data['name'],
+                'phone' => $data['phone'],
+                'address' => $data['address'],
+                'product_list' => $data['product_list'],
+                'paid' => $data['paid'],
+                'due' => $data['due'],
+                'total' => $data['paid'] + $data['due'],
+            ]);
+
+            $customer->addresses()->firstOrCreate(['address' => $data['address']]);
+
+            return $orderNote;
+        });
+
+        return redirect()->route('order-notes.show', $orderNote)->with('success', 'Order note created successfully.');
+    }
+
+    public function show(OrderNote $orderNote)
+    {
+        $orderNote->load(['customer.addresses', 'invoice']);
+
+        return Inertia::render('order-notes/Show', [
+            'orderNote' => $orderNote,
+        ]);
+    }
+
+    public function edit(OrderNote $orderNote)
+    {
+        $orderNote->load(['customer.addresses', 'invoice']);
+
+        return Inertia::render('order-notes/Edit', [
+            'orderNote' => $orderNote,
+            'customers' => $this->customerOptions(),
+        ]);
+    }
+
+    public function update(Request $request, OrderNote $orderNote)
+    {
+        $data = $this->validated($request);
+
+        DB::transaction(function () use ($data, $orderNote) {
+            $customer = $this->resolveCustomer($data);
+
+            $orderNote->update([
+                'customer_id' => $customer->id,
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'address' => $data['address'],
@@ -31,7 +107,18 @@ class OrderNoteController extends Controller
             $customer->addresses()->firstOrCreate(['address' => $data['address']]);
         });
 
-        return redirect()->route('dashboard')->with('success', 'Order note created successfully.');
+        return redirect()->route('order-notes.show', $orderNote)->with('success', 'Order note updated successfully.');
+    }
+
+    public function destroy(OrderNote $orderNote)
+    {
+        if ($orderNote->invoice_id) {
+            return back()->with('error', 'Converted order notes cannot be deleted.');
+        }
+
+        $orderNote->delete();
+
+        return redirect()->route('order-notes.index')->with('success', 'Order note deleted successfully.');
     }
 
     public function convert(OrderNote $orderNote, IdGenerateService $idGenerateService)
@@ -87,5 +174,12 @@ class OrderNoteController extends Controller
             ['phone' => $data['phone']],
             ['name' => $data['name']]
         );
+    }
+
+    private function customerOptions()
+    {
+        return Customer::with('addresses')
+            ->latest('id')
+            ->get(['id', 'name', 'phone']);
     }
 }
