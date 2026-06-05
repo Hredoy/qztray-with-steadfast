@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\OrderNoteController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -12,6 +13,9 @@ Route::inertia('/', 'Welcome', [
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
     Route::resource('customers', CustomerController::class)->only(['store']);
+    Route::resource('order-notes', OrderNoteController::class)->only(['store']);
+    Route::post('/order-notes/{orderNote}/convert', [OrderNoteController::class, 'convert'])
+        ->name('order-notes.convert');
     Route::resource('invoices', InvoiceController::class);
 
     Route::get('/invoices/{invoice}/print/instruction', [InvoiceController::class, 'printInstruction'])
